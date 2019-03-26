@@ -26,7 +26,13 @@ else
     sed -i '/%%DNS2%%/d' /etc/ppp/pptpd-options
 fi
 
-sysctl -w net.ipv4.ip_forward=1
+case "$IPFORWARDING" in
+    ""|0|[Nn][Oo]|[Ff]*)
+        ;;
+    *)
+        sysctl -w net.ipv4.ip_forward=1
+        ;;
+esac
 
 # configure firewall
 if [ -f /config/firewall-rules.sh ]; then
