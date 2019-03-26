@@ -19,11 +19,11 @@ Example of _chap-secrets_ file:
 To start VPN server as a docker container run:
 
 ````
-docker run -d --net=host --cap-add NET_ADMIN --sysctl net.ipv4.ip_forward=1 -v /dev/log:/dev/log -v {local_path_to_chap_secrets}:/etc/ppp/chap-secrets lorf/vpn-pptp
+docker run -d --net=host --privileged -v /dev/log:/dev/log -v {local_path_to_config_dir}:/config lorf/vpn-pptp
 ````
 
-Edit your local _chap-secrets_ file, to add or modify VPN users whenever you need.
-When adding new users to _chap-secrets_ file, you don't need to restart Docker container.
+Edit your local _config/chap-secrets_ file, to add or modify VPN users whenever you need.
+When adding new users to _config/chap-secrets_ file, you don't need to restart Docker container.
 
 ## Connecting to VPN service
 You can use any VPN (PPTP) client to connect to the service.
