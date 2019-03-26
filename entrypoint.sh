@@ -2,12 +2,60 @@
 
 set -ex
 
-iptables_add() {
-    local table="${1:-filter}"
-    shift
-    iptables -t "$table" -C "$@" 2>/dev/null || \
-        iptables -t "$table" -A "$@"
+# Set defaults
+: ${IPFORWARDING:=yes}
+: ${NETWORK:=10.99.99.0/24}
+: ${LOCALIP:=10.99.99.1}
+: ${IPRANGE:=10.99.99.100-200}
+: ${DNS1:=8.8.8.8}
+: ${DNS2:=1.1.1.1}
+
+iptables_startup_pre() {
+    iptables_cleanup
+
+    iptables -N VPN_PPTP_IN
+    iptables -N VPN_PPTP_OUT
+    iptables -N VPN_PPTP_FWD
+    iptables -t nat -N VPN_PPTP_NAT_PRE
+    iptables -t nat -N VPN_PPTP_NAT_POST
 }
+
+iptables_startup_post() {
+    iptables -t nat -I PREROUTING -s "$NETWORK" -j VPN_PPTP_NAT_PRE
+    iptables -t nat -I PREROUTING -d "$NETWORK" -j VPN_PPTP_NAT_PRE
+    iptables -t nat -I POSTROUTING -s "$NETWORK" -j VPN_PPTP_NAT_POST
+    iptables -t nat -I POSTROUTING -d "$NETWORK" -j VPN_PPTP_NAT_POST
+    iptables -I INPUT -i ppp+ -j VPN_PPTP_IN
+    iptables -I OUTPUT -o ppp+ -j VPN_PPTP_OUT
+    iptables -I FORWARD -i ppp+ -j VPN_PPTP_FWD
+    iptables -I FORWARD -o ppp+ -j VPN_PPTP_FWD
+}
+
+iptables_cleanup() {
+    {
+        set +e
+        iptables -t nat -D PREROUTING -s "$NETWORK" -j VPN_PPTP_NAT_PRE 2>/dev/null
+        iptables -t nat -D PREROUTING -d "$NETWORK" -j VPN_PPTP_NAT_PRE 2>/dev/null
+        iptables -t nat -D POSTROUTING -s "$NETWORK" -j VPN_PPTP_NAT_POST 2>/dev/null
+        iptables -t nat -D POSTROUTING -d "$NETWORK" -j VPN_PPTP_NAT_POST 2>/dev/null
+        iptables -D INPUT -i ppp+ -j VPN_PPTP_IN 2>/dev/null
+        iptables -D OUTPUT -o ppp+ -j VPN_PPTP_OUT 2>/dev/null
+        iptables -D FORWARD -i ppp+ -j VPN_PPTP_FWD 2>/dev/null
+        iptables -D FORWARD -o ppp+ -j VPN_PPTP_FWD 2>/dev/null
+        iptables -F VPN_PPTP_IN 2>/dev/null
+        iptables -F VPN_PPTP_OUT 2>/dev/null
+        iptables -F VPN_PPTP_FWD 2>/dev/null
+        iptables -t nat -F VPN_PPTP_NAT_PRE 2>/dev/null
+        iptables -t nat -F VPN_PPTP_NAT_POST 2>/dev/null
+        iptables -X VPN_PPTP_IN 2>/dev/null
+        iptables -X VPN_PPTP_OUT 2>/dev/null
+        iptables -X VPN_PPTP_FWD 2>/dev/null
+        iptables -t nat -X VPN_PPTP_NAT_PRE 2>/dev/null
+        iptables -t nat -X VPN_PPTP_NAT_POST 2>/dev/null
+    } || true
+}
+
+trap 'rc=$?; iptables_cleanup; exit $rc' INT HUP TERM QUIT
 
 [ -f /config/pptpd-options ] && \
     cp -p /config/pptpd-options /etc/ppp/pptpd-options
@@ -37,8 +85,12 @@ case "$IPFORWARDING" in
 esac
 
 # configure firewall
+iptables_startup_pre
 if [ -f /etc/firewall-rules.sh ]; then
     . /etc/firewall-rules.sh
 fi
+iptables_startup_post
 
-exec "$@"
+"$@"
+
+iptables_cleanup
