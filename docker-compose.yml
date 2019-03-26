@@ -11,6 +11,12 @@ services:
     #  - pptpd
     #  - --fg
     #  - --debug
+    #environment:
+    #  - NETWORK=10.99.99.0/24
+    #  - LOCALIP=10.99.99.1
+    #  - IPRANGE=10.99.99.100-200
+    #  - DNS1=8.8.8.8
+    #  - DNS2=1.1.1.1
     volumes:
       - ./chap-secrets:/etc/ppp/chap-secrets:ro
       - /dev/log:/dev/log
