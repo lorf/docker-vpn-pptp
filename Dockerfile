@@ -2,7 +2,7 @@ FROM alpine
 
 RUN apk add --no-cache ppp pptpd iptables
 
-COPY ./etc /
+COPY ./etc /etc/
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod 0700 /entrypoint.sh
