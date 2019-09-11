@@ -6,9 +6,9 @@ set -ex
 : ${IPFORWARDING:=yes}
 : ${NETWORK:=10.99.99.0/24}
 : ${LOCALIP:=10.99.99.1}
-: ${IPRANGE:=10.99.99.100-200}
-: ${DNS1:=8.8.8.8}
-: ${DNS2:=1.1.1.1}
+#: ${IPRANGE:=10.99.99.100-200}
+#: ${DNS1:=8.8.8.8}
+#: ${DNS2:=1.1.1.1}
 
 iptables_startup_pre() {
     iptables_cleanup
