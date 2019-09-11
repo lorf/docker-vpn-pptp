@@ -66,10 +66,22 @@ trap 'rc=$?; iptables_cleanup; exit $rc' INT HUP TERM QUIT
 [ -f /config/firewall-rules.sh ] && \
     cp -p /config/firewall-rules.sh /etc/firewall-rules.sh
 
-sed -i "s!%%LOCALIP%%!$LOCALIP!g; s!%%IPRANGE%%!$IPRANGE!g" \
-    /etc/pptpd.conf
+if [ "$LOCALIP" ]; then
+    sed -i "s!%%LOCALIP%%!$LOCALIP!g" /etc/pptpd.conf
+else
+    sed -i "/%%LOCALIP%%/d" /etc/pptpd.conf
+fi
+if [ "$IPRANGE" ]; then
+    sed -i "s!%%IPRANGE%%!$IPRANGE!g" /etc/pptpd.conf
+else
+    sed -i "/%%IPRANGE%%/d" /etc/pptpd.conf
+fi
 
-sed -i "s!%%DNS1%%!$DNS1!g" /etc/ppp/pptpd-options
+if [ "$DNS1" ]; then
+    sed -i "s!%%DNS1%%!$DNS1!g" /etc/ppp/pptpd-options
+else
+    sed -i '/%%DNS1%%/d' /etc/ppp/pptpd-options
+fi
 if [ "$DNS2" ]; then
     sed -i "s!%%DNS2%%!$DNS2!g" /etc/ppp/pptpd-options
 else
